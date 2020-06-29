@@ -1,0 +1,97 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: prometheus-operator
+  namespace: argocd
+spec:
+  destination:
+    namespace: prometheus-operator
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    chart: prometheus-operator
+    helm:
+    repoURL: https://kubernetes-charts.storage.googleapis.com
+    targetRevision: 8.15.6
+    values:
+      alertmanager:
+        enabled: false
+      coreDns:
+        service:
+          selector:
+            k8s-app: kube-dns
+      grafana:
+        admin:
+          existingSecret: admin-user
+        envFromSecret: grafana-env
+        grafana.ini:
+          server:
+            root_url: https://grafana.t.efgh.nl
+          paths:
+            data: /var/lib/grafana/data
+            logs: /var/log/grafana
+            plugins: /var/lib/grafana/plugins
+            provisioning: /etc/grafana/provisioning
+          analytics:
+            check_for_updates: false
+          log:
+            mode: console
+          grafana_net:
+            url: https://grafana.net
+          auth.generic_oauth:
+            enabled: true
+            name: 9ka
+            allow_sign_up: true
+            client_id: grafana
+            scopes: openid profile email
+            auth_url: https://sso.9ka.nl/auth/realms/9ka/protocol/openid-connect/auth
+            token_url: https://sso.9ka.nl/auth/realms/9ka/protocol/openid-connect/token
+            api_url: https://sso.9ka.nl/auth/realms/9ka/protocol/openid-connect/userinfo
+            allowed_domains: kippendief.biz
+            client_secret: ${GRAFANA_OIDC_CLIENT_SECRET}
+          auth:
+            signout_redirect_url: https://sso.9ka.nl/auth/realms/9ka/protocol/openid-connect/logout
+          users:
+            allow_org_create: false
+            auto_assign_org: true
+            auto_assign_org_role: Admin
+          security:
+            allow_embedding: true
+        ingress:
+          annotations:
+            cert-manager.io/cluster-issuer: letsencrypt
+          enabled: true
+          hosts:
+          - grafana.t.efgh.nl
+          tls:
+          - secretName: grafana-tls
+            hosts:
+            - grafana.t.efgh.nl
+        plugins:
+        - fetzerch-sunandmoon-datasource
+      kubeDns:
+        enabled: false
+      kubeEtcd:
+        enabled: false
+      prometheus:
+        ingress:
+          annotations:
+            cert-manager.io/cluster-issuer: letsencrypt
+            nginx.ingress.kubernetes.io/whitelist-source-range: 185.227.75.212,172.21.40.0/21,2001:1540:802:6::/64
+          enabled: true
+          hosts:
+          - prometheus.9ka.nl
+          tls:
+          - secretName: prometheus-tls
+            hosts:
+            - prometheus.9ka.nl
+        prometheusSpec:
+          retention: 2w
+          storageSpec:
+            volumeClaimTemplate:
+              spec:
+                storageClassName: sas
+                resources:
+                  requests:
+                    storage: 10Gi
+  syncPolicy: {}
