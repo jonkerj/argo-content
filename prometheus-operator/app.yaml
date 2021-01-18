@@ -22,7 +22,7 @@ spec:
               k8s-app: kube-dns
         grafana:
           admin:
-            existingSecret: admin-user
+            existingSecret: grafana-admin-user
           envFromSecret: grafana-env
           grafana.ini:
             server:
