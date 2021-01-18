@@ -14,5 +14,3 @@ spec:
       name: grafana-env
       namespace: prometheus-operator
     type: Opaque
-status: {}
-

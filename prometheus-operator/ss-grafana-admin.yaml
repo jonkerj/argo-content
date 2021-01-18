@@ -14,5 +14,3 @@ spec:
       name: grafana-admin-user
       namespace: prometheus-operator
     type: Opaque
-status: {}
-
